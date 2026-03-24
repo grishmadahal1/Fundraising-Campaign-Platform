@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy to AWS
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+      - run: npm test
+      - run: npm run build
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      # AWS credentials — configure these as GitHub secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION || 'ap-southeast-2' }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+      # Deploy infrastructure
+      - name: Deploy CloudFormation stack
+        if: ${{ secrets.AWS_DEPLOY_ROLE_ARN != '' }}
+        run: |
+          aws cloudformation deploy \
+            --template-file infrastructure/template.yml \
+            --stack-name mocampaign-${{ github.ref_name }} \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset
+
+      # Placeholder for app deployment (e.g. S3 + CloudFront, or Lambda@Edge)
+      # Uncomment and configure once infrastructure is set up:
+      # - name: Deploy to S3
+      #   run: aws s3 sync .next/static s3://${{ vars.DEPLOY_BUCKET }}/static
