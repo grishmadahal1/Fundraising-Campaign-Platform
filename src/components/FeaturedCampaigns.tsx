@@ -1,87 +1,27 @@
-import { CampaignCard } from './CampaignCard';
-import type { Campaign } from '@/types';
+'use client';
 
-/**
- * Hardcoded sample campaigns for the initial build.
- * These will be replaced with real data from the API once
- * the campaign creation flow is built.
- */
-const SAMPLE_CAMPAIGNS: Campaign[] = [
-  {
-    id: 'sample-1',
-    userId: 'user-1',
-    title: "Mo'vember Marathon Challenge",
-    description:
-      "I'm running a marathon this November to raise funds for men's mental health awareness. Every kilometre counts, and every dollar helps fund vital research and support programs.",
-    goalAmount: 5000,
-    currentAmount: 3250,
-    status: 'active',
-    createdAt: '2024-11-01T00:00:00Z',
-    updatedAt: '2024-11-15T00:00:00Z',
-  },
-  {
-    id: 'sample-2',
-    userId: 'user-2',
-    title: 'Grow a Mo, Save a Bro',
-    description:
-      "Growing a moustache and raising awareness for prostate cancer research. Help me reach my goal and let's make a difference together.",
-    goalAmount: 2000,
-    currentAmount: 1800,
-    status: 'active',
-    createdAt: '2024-11-01T00:00:00Z',
-    updatedAt: '2024-11-10T00:00:00Z',
-  },
-  {
-    id: 'sample-3',
-    userId: 'user-3',
-    title: 'Cycling for Mental Health',
-    description:
-      "I'm cycling 500km to raise awareness about men's mental health. Depression and anxiety affect millions of men — let's break the stigma.",
-    goalAmount: 3000,
-    currentAmount: 750,
-    status: 'active',
-    createdAt: '2024-11-05T00:00:00Z',
-    updatedAt: '2024-11-12T00:00:00Z',
-  },
-  {
-    id: 'sample-4',
-    userId: 'user-4',
-    title: "Dad's Health Matters",
-    description:
-      "Fundraising in honour of my dad's cancer battle. All proceeds go towards early detection programs that save lives.",
-    goalAmount: 10000,
-    currentAmount: 6420,
-    status: 'active',
-    createdAt: '2024-10-28T00:00:00Z',
-    updatedAt: '2024-11-14T00:00:00Z',
-  },
-  {
-    id: 'sample-5',
-    userId: 'user-5',
-    title: 'Shave It Off Challenge',
-    description:
-      "If I hit my goal, I'm shaving my head live on stream! All funds support men's health initiatives in our local community.",
-    goalAmount: 1500,
-    currentAmount: 1500,
-    status: 'active',
-    createdAt: '2024-11-02T00:00:00Z',
-    updatedAt: '2024-11-13T00:00:00Z',
-  },
-  {
-    id: 'sample-6',
-    userId: 'user-6',
-    title: 'Tech Bros for Testicular Health',
-    description:
-      "Our dev team is fundraising together for testicular cancer research. We're matching every donation dollar-for-dollar.",
-    goalAmount: 8000,
-    currentAmount: 4200,
-    status: 'active',
-    createdAt: '2024-11-03T00:00:00Z',
-    updatedAt: '2024-11-11T00:00:00Z',
-  },
-];
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { CampaignCard } from './CampaignCard';
+import { Button } from './ui/Button';
+import { apiClient } from '@/lib/api/client';
+import type { ApiResponse, Campaign } from '@/types';
 
 export function FeaturedCampaigns() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient<ApiResponse<Campaign[]>>('/api/campaigns')
+      .then((res) => {
+        if (res.data) setCampaigns(res.data);
+      })
+      .catch(() => {
+        // Silently fail — homepage still renders
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     <section id="campaigns" className="py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -96,11 +36,32 @@ export function FeaturedCampaigns() {
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_CAMPAIGNS.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-80 animate-pulse rounded-xl border border-gray-200 bg-gray-100"
+              />
+            ))}
+          </div>
+        ) : campaigns.length === 0 ? (
+          <div className="mt-10 rounded-xl border-2 border-dashed border-gray-200 p-16 text-center">
+            <p className="text-lg text-gray-500">No active campaigns yet.</p>
+            <p className="mt-2 text-sm text-gray-400">
+              Be the first to start fundraising!
+            </p>
+            <Link href="/campaigns/create" className="mt-6 inline-block">
+              <Button size="lg">Start a campaign</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {campaigns.map((campaign) => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
