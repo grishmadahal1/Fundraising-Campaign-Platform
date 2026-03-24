@@ -13,6 +13,11 @@ set -euo pipefail
 ENDPOINT="http://localhost:8000"
 REGION="ap-southeast-2"
 
+# Use dummy credentials matching the app's DynamoDB client config
+# (DynamoDB Local without -sharedDb isolates databases per access key)
+export AWS_ACCESS_KEY_ID="local"
+export AWS_SECRET_ACCESS_KEY="local"
+
 echo "Creating Users table..."
 aws dynamodb create-table \
   --table-name mocampaign-users \
