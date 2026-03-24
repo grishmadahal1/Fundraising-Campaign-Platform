@@ -1,19 +1,23 @@
 import pino from 'pino';
 import { env } from '@/config/env';
 
+const isDev = env.app.environment === 'development';
+
+/**
+ * Pino logger instance.
+ * In development: human-readable formatted output (no worker threads).
+ * In production: structured JSON for log aggregation.
+ */
 export const logger = pino({
-  level: env.app.environment === 'production' ? 'info' : 'debug',
-  transport:
-    env.app.environment === 'development'
-      ? {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss',
-            ignore: 'pid,hostname',
-          },
-        }
-      : undefined,
+  level: isDev ? 'debug' : 'info',
+  ...(isDev && {
+    formatters: {
+      level(label) {
+        return { level: label };
+      },
+    },
+    timestamp: pino.stdTimeFunctions.isoTime,
+  }),
 });
 
 /**
