@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
+import { DonationForm } from '@/components/DonationForm';
 import type { ApiResponse, CampaignWithDonorCount, Donation } from '@/types';
 
 export default function CampaignPage() {
@@ -58,6 +59,19 @@ export default function CampaignPage() {
     );
   }
 
+  function handleDonationSuccess(donation: Donation) {
+    setDonations((prev) => [donation, ...prev]);
+    setCampaign((prev) =>
+      prev
+        ? {
+            ...prev,
+            currentAmount: prev.currentAmount + donation.amount,
+            donorCount: prev.donorCount + 1,
+          }
+        : prev
+    );
+  }
+
   const daysActive = Math.max(
     1,
     Math.floor((Date.now() - new Date(campaign.createdAt).getTime()) / (1000 * 60 * 60 * 24))
@@ -102,6 +116,11 @@ export default function CampaignPage() {
 
           <div className="mt-6 whitespace-pre-wrap text-gray-700 leading-relaxed">
             {campaign.description}
+          </div>
+
+          {/* Donation form */}
+          <div className="mt-12 rounded-xl border border-gray-200 bg-gray-50 p-6">
+            <DonationForm campaignId={campaign.id} onSuccess={handleDonationSuccess} />
           </div>
 
           {/* Recent donations */}
