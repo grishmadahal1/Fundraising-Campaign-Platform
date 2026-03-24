@@ -10,6 +10,7 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+  transformIgnorePatterns: ['node_modules/(?!(jose)/)'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
